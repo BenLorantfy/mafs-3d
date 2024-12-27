@@ -1,21 +1,20 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { Mafs3D } from './Mafs3D.js';
 import { Coordinates } from './Coordinates.js';
+import { Mafs3D } from './Mafs3D.js';
 
-const meta: Meta<typeof Mafs3D> = {
-  component: Mafs3D,
+const meta: Meta<typeof Coordinates> = {
+  component: Coordinates,
   tags: ['autodocs'],
   decorators: [
     (Story) => (
       <div style={{ height: '600px' }}>
-        <Story />
+        <Mafs3D>
+          <Story />
+        </Mafs3D>
       </div>
     )
-  ],
-  args: {
-    children: <Coordinates />
-  }
+  ]
 };
 
 export default meta;
