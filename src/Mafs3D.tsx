@@ -1,20 +1,24 @@
-import { createContext, useContext, useLayoutEffect, useRef } from 'react';
+import { createContext, useLayoutEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { useContextOrThrow } from './utils.js';
 
 const SceneProvider = createContext<THREE.Scene | null>(null);
 
-export default function ThreeDee({ children }: { children?: React.ReactNode }) {
+/**
+ * A 3D scene that can contain 3D plots, points, etc.
+ */
+export function Mafs3D({ children }: { children?: React.ReactNode }) {
     const ref = useRef<HTMLDivElement>(null);
     const sceneRef = useRef<THREE.Scene | null>(null);
     if (!sceneRef.current) {
         sceneRef.current = new THREE.Scene();
     }
+    const scene = sceneRef.current;
 
     useLayoutEffect(() => {
-        const scene = sceneRef.current;
         const parent = ref.current;
-        if (!scene || !parent || parent.childNodes.length > 0) {
+        if (!parent || parent.childNodes.length > 0) {
             return;
         }
 
@@ -147,83 +151,24 @@ export default function ThreeDee({ children }: { children?: React.ReactNode }) {
             controls.update(); // Update controls in animation loop
             renderer.render( scene, camera );
         }
-    }, []);
+
+        return () => {
+            renderer.dispose();
+            controls.dispose();
+            scene.clear();
+        }
+    }, [scene]);
 
     return (
         <>
             <div ref={ref} style={{ width: '100%', height: '100%' }}></div>
-            <SceneProvider.Provider value={sceneRef.current}>
+            <SceneProvider.Provider value={scene}>
                 {children}
             </SceneProvider.Provider>
         </>
     )
 }
 
-ThreeDee.Plot = function Plot({ z: zFn }: { z: (x: number, y: number) => number }) {
-    const scene = useContextOrThrow(SceneProvider, 'ThreeDee.Plot');
-    useLayoutEffect(() => {
-        // Create arrays to store vertices and faces
-        const vertices = [];
-        const indices = [];
-        const resolution = 200; // Points per axis
-        const size = 10; // Total size of grid
-        const step = size / resolution;
-
-        // Generate vertices grid
-        for (let i = 0; i <= resolution; i++) {
-            for (let j = 0; j <= resolution; j++) {
-                const x = (i * step) - (size / 2);
-                const z = (j * step) - (size / 2);
-                const y = zFn(x, z); // Z function maps to y value
-                vertices.push(x, y, z);
-            }
-        }
-
-        // Generate indices for triangles
-        for (let i = 0; i < resolution; i++) {
-            for (let j = 0; j < resolution; j++) {
-                const a = i * (resolution + 1) + j;
-                const b = a + 1;
-                const c = a + (resolution + 1);
-                const d = c + 1;
-
-                // Create two triangles for each grid square
-                indices.push(a, b, c); // First triangle
-                indices.push(b, d, c); // Second triangle
-            }
-        }
-
-        // Create geometry from vertices and indices
-        const geometry = new THREE.BufferGeometry();
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-        geometry.setIndex(indices);
-        geometry.computeVertexNormals(); // Add normals for proper lighting
-
-        // Create material with basic shading
-        const material = new THREE.MeshPhongMaterial({ 
-            color: 0x00ff00,
-            side: THREE.DoubleSide,
-            flatShading: true,
-            wireframe: false
-        });
-
-        // Create mesh
-        const mesh = new THREE.Mesh(geometry, material);
-        scene.add(mesh);
-
-        return () => {
-            scene.remove(mesh);
-            geometry.dispose();
-            material.dispose();
-        };
-    }, [scene, zFn]);
-    return null;
-}
-
-function useContextOrThrow<T>(context: React.Context<T | null>, name: string): T {
-    const value = useContext(context);
-    if (!value) {
-        throw new Error(`${name} must be used within a ${context.displayName} provider`);
-    }
-    return value;
+export function useScene() {
+    return useContextOrThrow(SceneProvider, 'Component must be used inside Mafs3D');
 }
