@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 
 import { Mafs3D } from './Mafs3D.js';
 import { Coordinates } from './Coordinates.js';
+import { Plot } from './Plot.js';
 
 const meta: Meta<typeof Mafs3D> = {
   component: Mafs3D,
@@ -14,7 +15,12 @@ const meta: Meta<typeof Mafs3D> = {
     )
   ],
   args: {
-    children: <Coordinates />
+    children: (
+      <>
+        <Coordinates />
+        <Plot z={(x, y) => x ** 2 + (y - 5) ** 2 + 2} />
+      </>
+    )
   }
 };
 

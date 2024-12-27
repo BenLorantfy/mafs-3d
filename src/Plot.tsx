@@ -19,8 +19,8 @@ export function Plot({ z: zFn }: { z: (x: number, y: number) => number }) {
         for (let i = 0; i <= resolution; i++) {
             for (let j = 0; j <= resolution; j++) {
                 const x = (i * step) - (size / 2);
-                const z = (j * step) - (size / 2);
-                const y = zFn(x, z); // Z function maps to y value
+                const z = -((j * step) - (size / 2)); // Negate z to flip the y axis
+                const y = zFn(x, -z); // Also negate z in the function call to maintain correct mapping
                 vertices.push(x, y, z);
             }
         }

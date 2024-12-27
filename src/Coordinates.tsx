@@ -20,8 +20,8 @@ export function Coordinates() {
 
         const yAxis = new THREE.Line(
             new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(0, 0, -1000),
-                new THREE.Vector3(0, 0, 1000)
+                new THREE.Vector3(0, 0, 1000),
+                new THREE.Vector3(0, 0, -1000)
             ]),
             new THREE.LineBasicMaterial({ color: 0xb3ffb3 }) // Soft green for Y-axis
         );
@@ -55,10 +55,10 @@ export function Coordinates() {
                     labelPosition.set(i * tickInterval, 0, -tickSize);
                 } else if (axis === 'y') {
                     tickGeometry.setFromPoints([
-                        new THREE.Vector3(-tickSize/2, 0, i * tickInterval),
-                        new THREE.Vector3(tickSize/2, 0, i * tickInterval)
+                        new THREE.Vector3(-tickSize/2, 0, -i * tickInterval),
+                        new THREE.Vector3(tickSize/2, 0, -i * tickInterval)
                     ]);
-                    labelPosition.set(-tickSize, 0, i * tickInterval);
+                    labelPosition.set(-tickSize, 0, -i * tickInterval);
                 } else {
                     tickGeometry.setFromPoints([
                         new THREE.Vector3(-tickSize/2, i * tickInterval, 0),
@@ -83,7 +83,7 @@ export function Coordinates() {
                     context.font = '24px Arial';
                     context.textAlign = 'center';
                     context.textBaseline = 'middle';
-                    context.fillText(i.toString(), 32, 16);
+                    context.fillText(`${i.toString()}${axis}`, 32, 16);
 
                     const texture = new THREE.CanvasTexture(canvas);
                     const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
