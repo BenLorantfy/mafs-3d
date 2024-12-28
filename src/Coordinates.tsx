@@ -63,6 +63,35 @@ export function Coordinates() {
             new THREE.LineBasicMaterial({ color: 0xb3b3ff, linewidth: 4 })
         );
 
+        // Add axis labels
+        function createAxisLabel(text: string, position: THREE.Vector3, color: number) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            if (context) {
+                canvas.width = 128;
+                canvas.height = 64;
+                context.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
+                context.font = 'bold 48px Arial';
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(text, 64, 32);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+                const sprite = new THREE.Sprite(spriteMaterial);
+                sprite.position.copy(position);
+                sprite.scale.set(1, 0.5, 1);
+                scene.add(sprite);
+                return sprite;
+            }
+            return null;
+        }
+
+        // Create axis labels with positions closer to the axes
+        const xLabel = createAxisLabel('x', new THREE.Vector3(maxX + 0.5, 0, 0), 0xffb3b3);
+        const yLabel = createAxisLabel('y', new THREE.Vector3(0, 0, -(maxY + 0.5)), 0xb3ffb3);
+        const zLabel = createAxisLabel('z', new THREE.Vector3(0, maxZ + 0.5, 0), 0xb3b3ff);
+
         // Add ticks and labels
         const tickSize = 0.2;
         const tickInterval = 1;
@@ -84,19 +113,19 @@ export function Coordinates() {
                         new THREE.Vector3(i * tickInterval, 0, -tickSize/2),
                         new THREE.Vector3(i * tickInterval, 0, tickSize/2)
                     ]);
-                    labelPosition.set(i * tickInterval, 0, -tickSize);
+                    labelPosition.set(i * tickInterval, 0, -tickSize * 1.5);
                 } else if (axis === 'y') {
                     tickGeometry.setFromPoints([
                         new THREE.Vector3(-tickSize/2, 0, -i * tickInterval),
                         new THREE.Vector3(tickSize/2, 0, -i * tickInterval)
                     ]);
-                    labelPosition.set(-tickSize, 0, -i * tickInterval);
+                    labelPosition.set(-tickSize * 1.5, 0, -i * tickInterval);
                 } else {
                     tickGeometry.setFromPoints([
                         new THREE.Vector3(-tickSize/2, i * tickInterval, 0),
                         new THREE.Vector3(tickSize/2, i * tickInterval, 0)
                     ]);
-                    labelPosition.set(-tickSize, i * tickInterval, 0);
+                    labelPosition.set(-tickSize * 1.5, i * tickInterval, 0);
                 }
 
                 const tick = new THREE.Line(
@@ -141,6 +170,9 @@ export function Coordinates() {
             scene.remove(yAxis);
             scene.remove(zAxis);
             scene.remove(grid);
+            if (xLabel) scene.remove(xLabel);
+            if (yLabel) scene.remove(yLabel);
+            if (zLabel) scene.remove(zLabel);
             // Note: Other objects will be cleaned up when scene is cleared
         };
     }, [scene, sceneSettings]);
