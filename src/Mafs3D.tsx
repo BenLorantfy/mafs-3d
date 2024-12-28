@@ -5,15 +5,16 @@ import { useContextOrThrow } from './utils.js';
 
 const SceneProvider = createContext<THREE.Scene | null>(null);
 const SceneSettingsProvider = createContext<{ viewBox: { x: [number, number], y: [number, number], z: [number, number] } } | null>(null);
-
+const BoundingBoxMeshProvider = createContext<THREE.Object3D | null>(null);
 export interface Mafs3DProps {
     children?: React.ReactNode;
 
     /**
-     * Specifies an area of the graph to focus on:
+     * Specifies an area of the graph to focus on.  Specifically:
      * 1. Changes the camera to zoom to fit the viewBox into view (and then rotates the camera slightly)
-     * 2. Clips all plots an elements to inside the viewBox
-     * 3. The depth gradient starts from the top of the viewBox and finishes at the bottom of the viewBox
+     * 2. Clips all plots and other elements to inside the viewBox
+     * 3. The depth color gradient starts from the top of the viewBox and finishes at the bottom of the viewBox
+     * 4. Adds a light source positioned just outside the viewBox
      * 
      * For better performance, use a small viewBox
      */
@@ -29,6 +30,7 @@ export function Mafs3D({ children, viewBox = { x: [-10, 10], y: [-10, 10], z: [-
         sceneRef.current = new THREE.Scene();
     }
     const scene = sceneRef.current;
+    const boundingBoxMesh = useMemo(() => createBoundingBoxMeshFromViewBox(viewBox), [viewBox]);
 
     useLayoutEffect(() => {
         const parent = ref.current;
@@ -54,18 +56,20 @@ export function Mafs3D({ children, viewBox = { x: [-10, 10], y: [-10, 10], z: [-
         controls.screenSpacePanning = true; // Make panning work in screen space
         controls.panSpeed = 1.0; // Adjust pan speed as needed
 
-        // Add a light source
+        // Add a light source positioned just outside the viewBox
         const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(1, 1, 1);
+        light.position.set(
+            viewBox.x[1] + 2, // Just outside max X
+            viewBox.z[1] + 2, // Just outside max Z 
+            -viewBox.y[1] - 2 // Just outside max Y (negated due to coordinate system)
+        );
         scene.add(light);
 
         // Add ambient light to prevent completely dark areas
         const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
         scene.add(ambientLight);
 
-        const boundingBoxMesh = createBoundingBoxMeshFromViewBox(viewBox);
-
-        scene.add(boundingBoxMesh);
+        // scene.add(boundingBoxMesh);
 
         fitCameraToObject(camera, boundingBoxMesh, 1.25, controls);
         rotateCameraAroundBoundingBox(camera, boundingBoxMesh, 20);
@@ -81,17 +85,19 @@ export function Mafs3D({ children, viewBox = { x: [-10, 10], y: [-10, 10], z: [-
             controls.dispose();
             scene.clear();
         }
-    }, [scene]);
+    }, [scene, boundingBoxMesh]);
 
     const sceneSettings = useMemo(() => ({ viewBox }), [viewBox]);
 
     return (
         <>
             <div ref={ref} style={{ width: '100%', height: '100%' }}></div>
-            <SceneProvider.Provider value={scene}>
-                <SceneSettingsProvider.Provider value={sceneSettings}>
-                    {children}
-                </SceneSettingsProvider.Provider>
+                <SceneProvider.Provider value={scene}>
+                    <SceneSettingsProvider.Provider value={sceneSettings}>
+                        <BoundingBoxMeshProvider.Provider value={boundingBoxMesh}>
+                            {children}
+                        </BoundingBoxMeshProvider.Provider>
+                    </SceneSettingsProvider.Provider>
             </SceneProvider.Provider>
         </>
     )
@@ -103,6 +109,10 @@ export function useScene() {
 
 export function useSceneSettings() {
     return useContextOrThrow(SceneSettingsProvider, 'Component must be used inside Mafs3D');
+}
+
+export function useBoundingBoxMesh() {
+    return useContextOrThrow(BoundingBoxMeshProvider, 'Component must be used inside Mafs3D');
 }
 
 function fitCameraToObject(camera: THREE.PerspectiveCamera, object: THREE.Object3D, offset: number, orbitControls: OrbitControls) {

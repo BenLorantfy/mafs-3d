@@ -1,11 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
 
-import { Plot } from './Plot.js';
+import { Point } from './Point.js';
 import { Mafs3D } from './Mafs3D.js';
 
-const meta: Meta<typeof Plot> = {
-  component: Plot,
-  tags: ['autodocs'],
+const meta: Meta<typeof Point> = {
+  component: Point,
   decorators: [
     (Story) => (
       <div style={{ height: '600px' }}>
@@ -15,7 +14,7 @@ const meta: Meta<typeof Plot> = {
       </div>
     )
   ]
-}
+};
 
 export default meta;
 
@@ -23,6 +22,8 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
     args: {
-        z: (x, y) => Math.sin(x) + Math.cos(y)
+        x: 2,
+        y: 2,
+        z: 2
     }
 };
