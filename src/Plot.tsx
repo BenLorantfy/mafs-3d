@@ -1,27 +1,54 @@
 import { useLayoutEffect } from "react";
 import * as THREE from 'three';
-import { useScene } from "./Mafs3D.js";
+import { useScene, useSceneSettings } from "./Mafs3D.js";
+import { createBoundingBoxMeshFromViewBox } from "./utils.js";
 
 /**
  * A plot is a 3D surface that is created by plotting a function of two variables.
  */
 export function Plot({ z: zFn }: { z: (x: number, y: number) => number }) {
     const scene = useScene();
+    const sceneSettings = useSceneSettings();
+
     useLayoutEffect(() => {
-        // Create arrays to store vertices and faces
+        // Create arrays to store vertices, faces and colors
         const vertices = [];
         const indices = [];
+        const colors = [];
         const resolution = 200; // Points per axis
-        const size = 10; // Total size of grid
-        const step = size / resolution;
+
+        // Get all viewbox bounds
+        const [minX, maxX] = sceneSettings.viewBox.x;
+        const [minY, maxY] = sceneSettings.viewBox.z;
+        const [minZ, maxZ] = sceneSettings.viewBox.y;
+
+        // Calculate steps based on viewbox size
+        const stepX = (maxX - minX) / resolution;
+        const stepZ = (maxZ - minZ) / resolution;
 
         // Generate vertices grid
         for (let i = 0; i <= resolution; i++) {
             for (let j = 0; j <= resolution; j++) {
-                const x = (i * step) - (size / 2);
-                const z = -((j * step) - (size / 2)); // Negate z to flip the y axis
-                const y = zFn(x, -z); // Also negate z in the function call to maintain correct mapping
+                const x = minX + (i * stepX);
+                const z = -(minZ + (j * stepZ)); // Negate z to flip the y axis
+                const y = Math.max(minY, Math.min(maxY, zFn(x, -z)));
                 vertices.push(x, y, z);
+            }
+        }
+
+        // Generate colors based on y values
+        for (let i = 0; i < vertices.length; i += 3) {
+            const y = vertices[i + 1]!;
+            const t = (y - minY) / (maxY - minY); // Normalize to [0,1] using viewbox bounds
+            
+            if (y >= sceneSettings.viewBox.z[1]) {
+                colors.push(0, 0, 0, 0); // Fully transparent instead of black
+            } else {
+                // Interpolate between blue (low) and orange (high)
+                const r = t;
+                const g = t * 0.5;
+                const b = 1 - t;
+                colors.push(r, g, b, 1);
             }
         }
 
@@ -42,15 +69,20 @@ export function Plot({ z: zFn }: { z: (x: number, y: number) => number }) {
         // Create geometry from vertices and indices
         const geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 4));
         geometry.setIndex(indices);
         geometry.computeVertexNormals(); // Add normals for proper lighting
 
-        // Create material with basic shading
+        // Create material with vertex colors
         const material = new THREE.MeshPhongMaterial({ 
-            color: 0x00ff00,
+            vertexColors: true,
             side: THREE.DoubleSide,
             flatShading: true,
-            wireframe: false
+            wireframe: false,
+            clippingPlanes: [
+                new THREE.Plane(new THREE.Vector3(0, -1, 0), sceneSettings.viewBox.z[1] - 0.2), // Top clip
+                new THREE.Plane(new THREE.Vector3(0, 1, 0), -sceneSettings.viewBox.z[0] - 0.2)        // Bottom clip
+            ]
         });
 
         // Create mesh
@@ -62,6 +94,6 @@ export function Plot({ z: zFn }: { z: (x: number, y: number) => number }) {
             geometry.dispose();
             material.dispose();
         };
-    }, [scene, zFn]);
+    }, [scene, zFn, sceneSettings]);
     return null;
 }

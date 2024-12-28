@@ -83,7 +83,7 @@ export function Coordinates() {
                     context.font = '24px Arial';
                     context.textAlign = 'center';
                     context.textBaseline = 'middle';
-                    context.fillText(`${i.toString()}${axis}`, 32, 16);
+                    context.fillText(i.toString(), 32, 16);
 
                     const texture = new THREE.CanvasTexture(canvas);
                     const spriteMaterial = new THREE.SpriteMaterial({ map: texture });

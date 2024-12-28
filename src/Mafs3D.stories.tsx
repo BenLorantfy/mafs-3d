@@ -15,10 +15,12 @@ const meta: Meta<typeof Mafs3D> = {
     )
   ],
   args: {
+    viewBox: { x: [0, 5], y: [0, 5], z: [0, 6] },
     children: (
       <>
         <Coordinates />
-        <Plot z={(x, y) => x ** 2 + (y - 5) ** 2 + 2} />
+        <Plot z={(x, y) => (x - 4) ** 2 + (y - 4) ** 2 + 2} />
+        <Plot z={(x, y) => Math.sin(x) + Math.cos(y) + 2.5} />
       </>
     )
   }
