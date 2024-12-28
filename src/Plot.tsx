@@ -11,22 +11,18 @@ export function Plot({ z: zFn }: { z: (x: number, y: number) => number }) {
     const sceneSettings = useSceneSettings();
 
     useLayoutEffect(() => {
-        // Create arrays to store vertices, faces and colors
         const vertices = [];
         const indices = [];
         const colors = [];
         const resolution = 200; // Points per axis
 
-        // Get all viewbox bounds
         const [minX, maxX] = sceneSettings.viewBox.x;
         const [minY, maxY] = sceneSettings.viewBox.z;
         const [minZ, maxZ] = sceneSettings.viewBox.y;
 
-        // Calculate steps based on viewbox size
         const stepX = (maxX - minX) / resolution;
         const stepZ = (maxZ - minZ) / resolution;
 
-        // Generate vertices grid
         for (let i = 0; i <= resolution; i++) {
             for (let j = 0; j <= resolution; j++) {
                 const x = minX + (i * stepX);
@@ -36,13 +32,12 @@ export function Plot({ z: zFn }: { z: (x: number, y: number) => number }) {
             }
         }
 
-        // Generate colors based on y values
         for (let i = 0; i < vertices.length; i += 3) {
             const y = vertices[i + 1]!;
             const t = (y - minY) / (maxY - minY); // Normalize to [0,1] using viewbox bounds
             
             if (y >= sceneSettings.viewBox.z[1]) {
-                colors.push(0, 0, 0, 0); // Fully transparent instead of black
+                colors.push(0, 0, 0);
             } else {
                 // Interpolate between blue (low) and orange (high)
                 const r = t;
@@ -73,19 +68,17 @@ export function Plot({ z: zFn }: { z: (x: number, y: number) => number }) {
         geometry.setIndex(indices);
         geometry.computeVertexNormals(); // Add normals for proper lighting
 
-        // Create material with vertex colors
         const material = new THREE.MeshPhongMaterial({ 
             vertexColors: true,
             side: THREE.DoubleSide,
             flatShading: true,
             wireframe: false,
             clippingPlanes: [
-                new THREE.Plane(new THREE.Vector3(0, -1, 0), sceneSettings.viewBox.z[1] - 0.2), // Top clip
-                new THREE.Plane(new THREE.Vector3(0, 1, 0), -sceneSettings.viewBox.z[0] - 0.2)        // Bottom clip
+                new THREE.Plane(new THREE.Vector3(0, -1, 0), sceneSettings.viewBox.z[1] - 0.2), // Clip above the viewBox
+                new THREE.Plane(new THREE.Vector3(0, 1, 0), -sceneSettings.viewBox.z[0] - 0.2)  // Clip below the viewBox
             ]
         });
 
-        // Create mesh
         const mesh = new THREE.Mesh(geometry, material);
         scene.add(mesh);
 

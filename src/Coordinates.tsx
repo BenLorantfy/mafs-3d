@@ -14,19 +14,16 @@ export function Coordinates() {
         const [minY, maxY] = sceneSettings.viewBox.y;
         const [minZ, maxZ] = sceneSettings.viewBox.z;
 
-        // Create grid first so it renders under axes
         const gridSize = Math.max(maxX - minX, maxY - minY);
         const divisions = Math.floor(gridSize);
         const grid = new THREE.GridHelper(gridSize, divisions, 0x888888, 0x888888);
         
-        // Position grid to start at min bounds
         grid.position.set(
-            (maxX + minX) / 2, // Center X
+            (maxX + minX) / 2,
             0,
-            -(maxY + minY) / 2 // Center Y (negated because of coordinate system)
+            -(maxY + minY) / 2
         );
 
-        // Add clipping planes to grid
         const gridMaterial = grid.material as THREE.Material;
         gridMaterial.clippingPlanes = [
             new THREE.Plane(new THREE.Vector3(-1, 0, 0), maxX),
@@ -38,7 +35,6 @@ export function Coordinates() {
 
         scene.add(grid);
 
-        // Create axes clipped to viewBox with thicker lines
         const xAxis = new THREE.Line(
             new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(minX, 0, 0),
@@ -63,7 +59,6 @@ export function Coordinates() {
             new THREE.LineBasicMaterial({ color: 0xb3b3ff, linewidth: 4 })
         );
 
-        // Add axis labels
         function createAxisLabel(text: string, position: THREE.Vector3, color: number) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
@@ -87,16 +82,13 @@ export function Coordinates() {
             return null;
         }
 
-        // Create axis labels with positions closer to the axes
         const xLabel = createAxisLabel('x', new THREE.Vector3(maxX + 0.5, 0, 0), 0xffb3b3);
         const yLabel = createAxisLabel('y', new THREE.Vector3(0, 0, -(maxY + 0.5)), 0xb3ffb3);
         const zLabel = createAxisLabel('z', new THREE.Vector3(0, maxZ + 0.5, 0), 0xb3b3ff);
 
-        // Add ticks and labels
         const tickSize = 0.2;
         const tickInterval = 1;
 
-        // Helper function to create ticks and labels for an axis
         function createTicksAndLabels(axis: 'x' | 'y' | 'z', color: number) {
             const [min, max] = axis === 'x' ? [minX, maxX] : 
                               axis === 'y' ? [minY, maxY] : 
@@ -134,7 +126,6 @@ export function Coordinates() {
                 );
                 scene.add(tick);
 
-                // Create label
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
                 if (context) {
@@ -156,10 +147,9 @@ export function Coordinates() {
             }
         }
 
-        // Create ticks and labels for each axis with softer colors
-        createTicksAndLabels('x', 0xffb3b3); // Soft red
-        createTicksAndLabels('y', 0xb3ffb3); // Soft green
-        createTicksAndLabels('z', 0xb3b3ff); // Soft blue
+        createTicksAndLabels('x', 0xffb3b3);
+        createTicksAndLabels('y', 0xb3ffb3);
+        createTicksAndLabels('z', 0xb3b3ff);
 
         scene.add(xAxis);
         scene.add(yAxis);
@@ -173,7 +163,6 @@ export function Coordinates() {
             if (xLabel) scene.remove(xLabel);
             if (yLabel) scene.remove(yLabel);
             if (zLabel) scene.remove(zLabel);
-            // Note: Other objects will be cleaned up when scene is cleared
         };
     }, [scene, sceneSettings]);
 
