@@ -15,7 +15,7 @@ const meta: Meta<typeof Mafs3D> = {
     )
   ],
   args: {
-    viewBox: { x: [0, 5], y: [0, 5], z: [0, 6] },
+    viewBox: { x: [-2, 5], y: [-2, 5], z: [-2, 5] },
     children: (
       <>
         <Coordinates />

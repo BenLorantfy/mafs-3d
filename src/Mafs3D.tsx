@@ -68,7 +68,7 @@ export function Mafs3D({ children, viewBox = { x: [-10, 10], y: [-10, 10], z: [-
         scene.add(boundingBoxMesh);
 
         fitCameraToObject(camera, boundingBoxMesh, 1.25, controls);
-        rotateCameraAroundBoundingBox(camera, boundingBoxMesh, 15);
+        rotateCameraAroundBoundingBox(camera, boundingBoxMesh, 20);
         
         function animate() {
             if (!scene) return;
@@ -181,29 +181,76 @@ function fitCameraToObject(camera: THREE.PerspectiveCamera, object: THREE.Object
     }
 };
 
-function rotateCameraAroundBoundingBox(camera: THREE.Camera, boundingBoxMesh: THREE.Mesh, angleDegrees: number) {
+function rotateCameraAroundBoundingBox(camera: THREE.Camera, boundingBoxMesh: THREE.Object3D, angleDegrees: number) {
     const angle = THREE.MathUtils.degToRad(angleDegrees);
     const distance = camera.position.distanceTo(boundingBoxMesh.position);
     
+    // Calculate horizontal rotation
+    const horizontalDistance = distance * Math.cos(angle);
     camera.position.x = boundingBoxMesh.position.x + distance * Math.sin(angle);
-    camera.position.z = boundingBoxMesh.position.z + distance * Math.cos(angle);
+    camera.position.z = boundingBoxMesh.position.z + horizontalDistance * Math.cos(angle);
+    
+    // Calculate vertical position using same angle
+    camera.position.y = boundingBoxMesh.position.y + horizontalDistance * Math.sin(angle);
+    
     camera.lookAt(boundingBoxMesh.position);
 }
 
 function createBoundingBoxMeshFromViewBox(viewBox: { x: [number, number], y: [number, number], z: [number, number] }) {
-    const boundingBoxMesh = new THREE.Mesh(
-        new THREE.BoxGeometry(
-            Math.abs(viewBox.x[1] - viewBox.x[0]),  // width (x)
-            Math.abs(viewBox.z[1] - viewBox.z[0]),   // height (z is up)
-            Math.abs(viewBox.y[1] - viewBox.y[0]),  // depth (y)
-        ),
-        new THREE.MeshBasicMaterial({
-            color: 0x808080,
-            wireframe: true,
-            transparent: true,
-            opacity: 0.5
-        })
-    );
+    const width = Math.abs(viewBox.x[1] - viewBox.x[0]);
+    const height = Math.abs(viewBox.z[1] - viewBox.z[0]); 
+    const depth = Math.abs(viewBox.y[1] - viewBox.y[0]);
+
+    // Create edges geometry with proper vertex pairs
+    const edges = [];
+    
+    // Bottom face edges (connected in sequence)
+    edges.push(new THREE.Vector3(-width/2, -height/2, -depth/2));
+    edges.push(new THREE.Vector3(width/2, -height/2, -depth/2));
+    
+    edges.push(new THREE.Vector3(width/2, -height/2, -depth/2));
+    edges.push(new THREE.Vector3(width/2, -height/2, depth/2));
+    
+    edges.push(new THREE.Vector3(width/2, -height/2, depth/2));
+    edges.push(new THREE.Vector3(-width/2, -height/2, depth/2));
+    
+    edges.push(new THREE.Vector3(-width/2, -height/2, depth/2));
+    edges.push(new THREE.Vector3(-width/2, -height/2, -depth/2));
+
+    // Top face edges (connected in sequence)
+    edges.push(new THREE.Vector3(-width/2, height/2, -depth/2));
+    edges.push(new THREE.Vector3(width/2, height/2, -depth/2));
+    
+    edges.push(new THREE.Vector3(width/2, height/2, -depth/2));
+    edges.push(new THREE.Vector3(width/2, height/2, depth/2));
+    
+    edges.push(new THREE.Vector3(width/2, height/2, depth/2));
+    edges.push(new THREE.Vector3(-width/2, height/2, depth/2));
+    
+    edges.push(new THREE.Vector3(-width/2, height/2, depth/2));
+    edges.push(new THREE.Vector3(-width/2, height/2, -depth/2));
+
+    // Vertical edges connecting top and bottom faces
+    edges.push(new THREE.Vector3(-width/2, -height/2, -depth/2));
+    edges.push(new THREE.Vector3(-width/2, height/2, -depth/2));
+    
+    edges.push(new THREE.Vector3(width/2, -height/2, -depth/2));
+    edges.push(new THREE.Vector3(width/2, height/2, -depth/2));
+    
+    edges.push(new THREE.Vector3(width/2, -height/2, depth/2));
+    edges.push(new THREE.Vector3(width/2, height/2, depth/2));
+    
+    edges.push(new THREE.Vector3(-width/2, -height/2, depth/2));
+    edges.push(new THREE.Vector3(-width/2, height/2, depth/2));
+
+    const geometry = new THREE.BufferGeometry().setFromPoints(edges);
+    const material = new THREE.LineBasicMaterial({
+        color: 0x808080,
+        transparent: true,
+        opacity: 0.5
+    });
+
+    const boundingBoxMesh = new THREE.LineSegments(geometry, material);
     boundingBoxMesh.position.set(
         (viewBox.x[0] + viewBox.x[1]) / 2,  // center x
         (viewBox.z[0] + viewBox.z[1]) / 2,   // center z (up)
