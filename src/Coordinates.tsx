@@ -1,11 +1,20 @@
 import { useLayoutEffect } from "react";
 import * as THREE from 'three';
 import { useScene, useSceneSettings } from "./Mafs3D.js";
+import { assert } from "./utils.js";
 
 /**
  * Overlays 3 axis and a grid on the scene
  */
-export function Coordinates() {
+export function Coordinates({ 
+    xAxisLabel = 'x', 
+    yAxisLabel = 'y', 
+    zAxisLabel = 'z' 
+}: { 
+    xAxisLabel?: string; 
+    yAxisLabel?: string; 
+    zAxisLabel?: string; 
+} = {}) {
     const scene = useScene();
     const sceneSettings = useSceneSettings();
 
@@ -62,29 +71,28 @@ export function Coordinates() {
         function createAxisLabel(text: string, position: THREE.Vector3, color: number) {
             const canvas = document.createElement('canvas');
             const context = canvas.getContext('2d');
-            if (context) {
-                canvas.width = 128;
-                canvas.height = 64;
-                context.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
-                context.font = 'bold 48px Arial';
-                context.textAlign = 'center';
-                context.textBaseline = 'middle';
-                context.fillText(text, 64, 32);
+            assert(context, 'Failed to get canvas context');
 
-                const texture = new THREE.CanvasTexture(canvas);
-                const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-                const sprite = new THREE.Sprite(spriteMaterial);
-                sprite.position.copy(position);
-                sprite.scale.set(1, 0.5, 1);
-                scene.add(sprite);
-                return sprite;
-            }
-            return null;
+            canvas.width = 128;
+            canvas.height = 64;
+            context.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
+            context.font = 'bold 48px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(text, 64, 32);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(spriteMaterial);
+            sprite.position.copy(position);
+            sprite.scale.set(1, 0.5, 1);
+            scene.add(sprite);
+            return sprite;
         }
 
-        const xLabel = createAxisLabel('x', new THREE.Vector3(maxX + 0.5, 0, 0), 0xffb3b3);
-        const yLabel = createAxisLabel('y', new THREE.Vector3(0, 0, -(maxY + 0.5)), 0xb3ffb3);
-        const zLabel = createAxisLabel('z', new THREE.Vector3(0, maxZ + 0.5, 0), 0xb3b3ff);
+        const xLabel = createAxisLabel(xAxisLabel, new THREE.Vector3(maxX + 0.5, 0, 0), 0xffb3b3);
+        const yLabel = createAxisLabel(yAxisLabel, new THREE.Vector3(0, 0, -(maxY + 0.5)), 0xb3ffb3);
+        const zLabel = createAxisLabel(zAxisLabel, new THREE.Vector3(0, maxZ + 0.5, 0), 0xb3b3ff);
 
         const tickSize = 0.2;
         const tickInterval = 1;
@@ -128,22 +136,22 @@ export function Coordinates() {
 
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
-                if (context) {
-                    canvas.width = 64;
-                    canvas.height = 32;
-                    context.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
-                    context.font = '24px Arial';
-                    context.textAlign = 'center';
-                    context.textBaseline = 'middle';
-                    context.fillText(i.toString(), 32, 16);
+                assert(context, 'Failed to get canvas context');
 
-                    const texture = new THREE.CanvasTexture(canvas);
-                    const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-                    const sprite = new THREE.Sprite(spriteMaterial);
-                    sprite.position.copy(labelPosition);
-                    sprite.scale.set(0.5, 0.25, 1);
-                    scene.add(sprite);
-                }
+                canvas.width = 64;
+                canvas.height = 32;
+                context.fillStyle = `#${color.toString(16).padStart(6, '0')}`;
+                context.font = '24px Arial';
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(i.toString(), 32, 16);
+
+                const texture = new THREE.CanvasTexture(canvas);
+                const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+                const sprite = new THREE.Sprite(spriteMaterial);
+                sprite.position.copy(labelPosition);
+                sprite.scale.set(0.5, 0.25, 1);
+                scene.add(sprite);
             }
         }
 
@@ -160,11 +168,11 @@ export function Coordinates() {
             scene.remove(yAxis);
             scene.remove(zAxis);
             scene.remove(grid);
-            if (xLabel) scene.remove(xLabel);
-            if (yLabel) scene.remove(yLabel);
-            if (zLabel) scene.remove(zLabel);
+            scene.remove(xLabel);
+            scene.remove(yLabel);
+            scene.remove(zLabel);
         };
-    }, [scene, sceneSettings]);
+    }, [scene, sceneSettings, xAxisLabel, yAxisLabel, zAxisLabel]);
 
     return null;
 }
